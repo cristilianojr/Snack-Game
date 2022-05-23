@@ -8,6 +8,7 @@ FINISH_CODE:
 from random import randint
 import sys
 import time
+from turtle import width
 
 
 # Pygame Importations
@@ -27,24 +28,32 @@ screen: Surface = pygame.display.set_mode((CONFIGS['screen']['width'], CONFIGS['
 
 
 # Generator Food
-def create_new_food(screen: Surface, limite_x: int, limite_y: int, snake: Snake, color: tuple = (255, 0, 0)) -> Food:
+def create_new_food(limite_x: int, limite_y: int, snake: Snake, color: tuple = (255, 0, 0)) -> Food:
+
+    food = Food(color, 0, 0, snake.width, snake.height)
 
     while True:
-        x: int = randint(0, limite_x)
-        y: int = randint(0, limite_y)
+        x: int = randint(0, limite_x - food.width)
+        y: int = randint(0, limite_y - food.height)
 
         if (x, y) in snake._positions:
             continue
         else: 
-            return Food(color, x, y, snake.width, snake.height)
+            food.x = x
+            food.y = y
+            return food
 
 def is_collide(snake: Snake, food: Food) -> bool:
     for vertex in snake.area():
         if (food.x <= vertex[0] <= food.x + food.width) and (food.y <= vertex[1] <= food.y + food.height):
             return True
-    
     return False
-        
+
+def is_collide_with_wall(snake: Snake, width: int, height: int) -> bool:
+    for vertex in snake.area():
+        if (0 < vertex[0] < width) and (0 < vertex[1] < height):
+            return False
+    return True
 
 # Globals Vars
 objects_queue: list[Snake, Food] = [
@@ -56,22 +65,37 @@ The Objects Queue are all objects then will draw in the canvas
 """
 current_key: int = pygame.K_d
 delta: float = 0.1
-counter_food: int = 0
+status: str = 'ALIVE'
+
+
+# SYSTEM AND UI
+score: int = 0
+font = pygame.font.Font('Consola.ttf', 25)
 
 
 # MAIN LOOP
 while True:
     # Clear Canvas to next frame
     screen.fill(CONFIGS['screen']['background_color'])
+    
+    font_text = font.render(f'SCORE: {score}', True, (255, 255, 255))
+    score_rect = font_text.get_rect()
+    
+    if is_collide_with_wall(objects_queue[0], CONFIGS['screen']['width'], CONFIGS['screen']['height']) == True:
+        status = 'GAMEOVER'
+        screen.fill(CONFIGS['screen']['background_color'])
+        font_text_gameover = font.render(f'GAMEOVER - SCORE: {score}', True, (255, 255, 255))
+        gameover_rect = font_text.get_rect()
+        gameover_rect.center = ((CONFIGS['screen']['width'] - gameover_rect.width)/2, (CONFIGS['screen']['height']  - gameover_rect.height)/2)
+        screen.blit(font_text_gameover, gameover_rect)
 
     if objects_queue[1] == None:
-        objects_queue[1] = create_new_food(screen, CONFIGS['screen']['width'], CONFIGS['screen']['height'], objects_queue[0])
+        objects_queue[1] = create_new_food(CONFIGS['screen']['width'], CONFIGS['screen']['height'], objects_queue[0])
     elif is_collide(objects_queue[0], objects_queue[1]) == True:
-        counter_food += 1
+        score += 1
         delta /= 1.05
         objects_queue[0].add_shape()
-        objects_queue[1] = create_new_food(screen, CONFIGS['screen']['width'], CONFIGS['screen']['height'], objects_queue[0])
-        print(counter_food)
+        objects_queue[1] = create_new_food(CONFIGS['screen']['width'], CONFIGS['screen']['height'], objects_queue[0])
 
 
     for event in EVENT.get():
@@ -96,11 +120,16 @@ while True:
 
                 current_key = event.key
 
-    # Snake Movement apply
-    objects_queue[0].move()
+    if status != 'GAMEOVER':
+        # Snake Movement apply
+        objects_queue[0].move()
 
-    for game_object in objects_queue:
-        game_object.draw(screen)
+        for game_object in objects_queue:
+            game_object.draw(screen)
+
+        # DRAW UI
+        
+        screen.blit(font_text, score_rect)
 
     pygame.display.flip()
 

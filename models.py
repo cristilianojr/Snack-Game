@@ -22,9 +22,12 @@ class Snake:
         self.add_shape()
 
     def is_collide_myself(self) -> bool:
-        for pos in self._positions:
-            pass
-
+        for pos in self._positions[1::]:
+            x = pos[0]
+            y = pos[1]
+            for vertex in [(x, y), (x + self.width, y), (x + self.width, y + self.height), (x, y + self.height)]:
+                if (x <= vertex[0] <= x + self.width) and (y <= vertex[1] <= y + self.height):
+                    return True 
 
     def area(self) -> tuple:
         return (self.x, self.y), (self.x + self.width, self.y), (self.x + self.width, self.y + self.height), (self.x, self.y + self.height)
