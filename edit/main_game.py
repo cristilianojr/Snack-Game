@@ -2,7 +2,7 @@
 PROGRAM: Snake Game
 AUTHOR: Cristiliano Júnior
 START_CODE: 2202-05-21 22:26
-FINISH_CODE:
+FINISH_CODE: 2202-05-23 12:37
 """
 # Standart Importations
 from random import randint
